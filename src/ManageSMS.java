@@ -9,5 +9,5 @@ public interface ManageSMS {
     String retrieveSMSByMSISDN(long msisdn);
     String retrieveSMSSystemSent();
     String retrieveSMSSystemReceived();
-    String retrieveSMSBroadcast(ArrayList<Long> msisdns);
+    String retrieveSMSBroadcast(ArrayList<String> msisdns);
 }
