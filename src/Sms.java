@@ -9,10 +9,11 @@ public class Sms {
     private LocalDateTime timeStamp;//current date and time when sms was received
     private String status;          //Status if message is accepted or not
     private SmsTypeEnum type;
+    private String message;
 
     Sms(){}
 
-    Sms(String msisdn, String recipient, String sender, String shortCode, String transactionID, LocalDateTime timeStamp, String status, SmsTypeEnum type){
+    Sms(String msisdn, String recipient, String sender, String shortCode, String transactionID, LocalDateTime timeStamp, String status, SmsTypeEnum type, String message){
         this.msisdn = msisdn;
         this.recipient = recipient;
         this.sender = sender;
@@ -21,6 +22,7 @@ public class Sms {
         this.timeStamp = timeStamp;
         this.status = status;
         this.type = type;
+        this.message = message;
     }
 
     public String getMsisdn() {
@@ -85,5 +87,13 @@ public class Sms {
 
     public void setType(SmsTypeEnum type) {
         this.type = type;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 }

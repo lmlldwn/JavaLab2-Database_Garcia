@@ -17,56 +17,44 @@ public class Main {
         String message = "";
 
         while ( !"quit".equalsIgnoreCase(message)) {
-
             HashMap<String, String> smsHashMap = init();
             message = smsHashMap.get("Message");
-
             Sms sms = smsChecker(smsHashMap);
             smsManager.insertSms(sms);
-
         }
-      //init();
 
-//      sampleSMS();
-//      sms.showSummary();
-//
-//        retrieve by date
+
+
+
+//        showPromoSummary();
+//        displayPromos();
+////        retrieve by date
 //        String startDate = "2022-01-01 01:02:01";
 //        String endDate = "2022-03-01 01:00:00";
-//        prep.retrieveSMSByDate(startDate,endDate);
+//        smsManager.retrieveSmsByDate(startDate,endDate);
+//
+////        show SMS by PromoCode
+//        showSms(smsManager.retrieveSmsByPromoCode("PROMO"));
 
-//        retrieve sms by msisdn
+////        retrieve sms by msisdn
 //        String msisdn = "09209567110";
-//        prep.retrieveSmsByMsisdnMsisdn(msisdn);
+//        smsManager.retrieveSmsByMsisdn(msisdn);
 //
+////        retrieve sms received by system
+//        smsManager.retrieveSmsReceivedBySystem();
 //
-//        retrieve sms received by system
-//         prep.retrieveSmsReceivedBySystem();
-//
-//        retrieve sms sent by system
-//        prep.retrieveSmsSentBySystem();
+////        retrieve sms sent by system
+//        smsManager.retrieveSmsSentBySystem();
 //
 //        ArrayList<String> nums = new ArrayList<>();
 //        nums.add("09209561111");
 //        nums.add("09111111112");
 //        nums.add("09123456789");
-//        prep.retrieveSmsByMsisdn(nums);
-//
-//        report.retrieveFailedTransactions();
-//        report.retrieveFailedTransactions(SmsTypeEnum.PROMO_AVAIL.toString());
-//        report.retrieveSuccessfulTransactions();
-//        report.retrieveSuccessfulTransactions(SMSType.Registration.toString());
-//        report.retrieveParticipants();
-//        report.countSMSReceived();
-//        report.countSMSSent();
+//        smsManager.retrieveSmsByMsisdn(nums);
+
     }
 
     public static HashMap<String, String> init(){
-        String sender = "";
-        String recipient = "System";
-        String status;
-        String transactionID;
-        SmsTypeEnum type;
         Scanner scan = new Scanner(System.in);
 
         LOGGER.log(Level.INFO, "Enter Mobile Number: ");
@@ -84,37 +72,18 @@ public class Main {
         data.put("Short Code", shortCode);
 
         return data;
-//        if ( message.equals("REGISTER") ) {
-//            sender = registerName(msisdn, shortCode);
-//        }
-//
-
-//        status = smsChecker(data);
-//        type = SmsTypeEnum.PROMO_AVAIL;
-//
-//
-//        transactionID= UUID.randomUUID().toString();
-//        LocalDateTime timeStamp = LocalDateTime.now();
-//
-//
-//        if ( sender.equals("")  || msisdn.equals("") ){
-//            status = "Failed";
-//        }
-//
-//        Sms sms = new Sms(msisdn,sender,recipient,shortCode,transactionID,timeStamp,status,type);
-//        smsManager.insertSms(sms);
     }
 
     public static void promptRegisterName (String msisdn, String shortCode) {
-        String registerMessage = "To complete the promo registration, please send 'Lastname, Firstname' to " + shortCode;
-        generateSystemMessage(msisdn, shortCode);
+        String registerMessage = "To complete the promo registration, please send Lastname, Firstname to " + shortCode;
+        generateSystemMessage(msisdn, shortCode, registerMessage);
         LOGGER.log(Level.INFO, registerMessage);
     }
 
-    public static void generateSystemMessage(String msisdn, String shortCode){
+    public static void generateSystemMessage(String msisdn, String shortCode, String message){
         LocalDateTime timeStamp = LocalDateTime.now();
         String transactionID = UUID.randomUUID().toString();
-        Sms systemSms = new Sms(msisdn, msisdn, "SYSTEM", shortCode, transactionID, timeStamp, "Success", SmsTypeEnum.SYSTEM_GENERATED);
+        Sms systemSms = new Sms(msisdn, msisdn, "SYSTEM", shortCode, transactionID, timeStamp, "Success", SmsTypeEnum.SYSTEM_GENERATED, message);
         smsManager.insertSms(systemSms);
     }
 
@@ -125,6 +94,7 @@ public class Main {
         String transactionID = UUID.randomUUID().toString();
         LocalDateTime timeStamp = LocalDateTime.now();
         String status = "Failed";
+        String systemMessage;
         SmsTypeEnum type = SmsTypeEnum.SYSTEM_GENERATED;
 
         boolean proceed = true;
@@ -141,63 +111,79 @@ public class Main {
             while( i.hasNext() && proceed){
                 Map.Entry<String, String> me = i.next();
                 if (count == 1){
-                    //check if first item is a msisdn
                     if (!"MSISDN".equals(me.getKey())) {
-                        //validate value
                         LOGGER.log(Level.SEVERE, "Invalid first item!");
                         proceed = false;
                     }
                 }else if (count == 2){
-                    //check if second item is message
                     if ("Message".equals(me.getKey())) {
                         //validate value
                         if ("REGISTER".equals(message)) {
                             promptRegisterName(msisdn, shortCode);
+
                             type = SmsTypeEnum.REGISTRATION;
                             status = "Failed";
-                        }
-                        if ( message.contains(", ") ) {
-                            //check if previous message is REGISTER from same number???
-                            // success if register is sent before name
-                            sender = message;
                             String verifySender = smsManager.verifyRegistration(msisdn,shortCode);
-                            if( verifySender == "") {
+                            if(verifySender.equals("")) {
+                                systemMessage = "To complete the promo registration, please send Lastname, Firstname to " + shortCode;
                                 status="Success";
                             } else {
                                 status="Failed";
                                 sender = verifySender;
-
-                                LOGGER.info("Number has already been registered.");
-                                generateSystemMessage(msisdn, shortCode);
+                                systemMessage = "Number has already been registered.";
+                            }
+                            LOGGER.info(systemMessage);
+                        } else if ( message.contains(", ") ) {
+                            sender = message;
+                            String verifySender = smsManager.verifyRegistration(msisdn,shortCode);
+                            if(verifySender.equals("")) {
+                                status="Success";
+                                systemMessage = "Successfully registered.";
+                                LOGGER.info(systemMessage);
+                            } else {
+                                status="Failed";
+                                sender = verifySender;
+                                systemMessage = "Number has already been registered.";
+                                LOGGER.info(systemMessage);
                             }
                             type = SmsTypeEnum.REGISTRATION;
-
-                        }
-                        if ("PROMO".equals(message)){
-                            //check if sender registered???
+                        } else if ("PROMO".equals(message)){
                             type = SmsTypeEnum.PROMO_AVAIL;
                             sender = smsManager.verifyRegistration(msisdn,shortCode);
                             LOGGER.log(Level.INFO, "Short Code: {0}, Message: {1},  MSISDN: {2}", new Object[] { shortCode, message, msisdn });
-
                             if ( promoManager.validateShortCode( shortCode ) ) {
                                 if ( promoManager.validatePromo( message, convertLocalDateTimeToString(LocalDateTime.now()) ) ) {
-                                    LOGGER.info("Promo Code is valid");
-                                    status = "Success";
+                                    systemMessage = "Promo code accepted.";
+                                    LOGGER.info(systemMessage);
+                                    if (sender.equals("")) {
+                                        status = "Failed";
+                                        systemMessage = "User not registered. Please REGISTER first.";
+                                    } else {
+                                        status = "Success";
+                                    }
+
                                 } else {
-                                    LOGGER.severe("Invalid promo code or no running promotions at the moment.");
+                                    systemMessage = "Invalid promo code.";
                                     status = "Failed";
                                 }
                             } else {
-                                LOGGER.warning("Invalid short code.");
+                                systemMessage = "Invalid short code.";
+                                LOGGER.warning(systemMessage);
                                 status = "Failed";
                             }
+                        } else {
+                            type = SmsTypeEnum.PROMO_AVAIL;
+                            sender = smsManager.verifyRegistration(msisdn,shortCode);
+                            systemMessage = "Please send REGISTER to register or PROMO to avail promo.";
+                            LOGGER.severe(systemMessage);
                         }
+                        LOGGER.severe(systemMessage);
+                        generateSystemMessage(msisdn,shortCode,systemMessage);
                     }else {
                         LOGGER.warning("Invalid second item!");
                         proceed = false;
                     }
                 }else if (count == 3){
-                    //check if third item is short code
                     if (!"Short Code".equals(me.getKey())) {
                         //validate value
                         LOGGER.log(Level.SEVERE, "Invalid third item!");
@@ -209,10 +195,10 @@ public class Main {
         }else{
             LOGGER.log(Level.WARNING,"Incorrect number of items. Passed map has: " + smsValues.size() + " items");
         }
-        if(sender==""){
+        if(sender.equals("")){
             status = "Failed";
         }
-        return new Sms(msisdn,recipient,sender,shortCode,transactionID,timeStamp,status,type);
+        return new Sms(msisdn,recipient,sender,shortCode,transactionID,timeStamp,status,type, message);
     }
 
     //Display of ALL Promos
@@ -228,7 +214,7 @@ public class Main {
         }
     }
 
-    public void showSms(List<Sms> smsList) {
+    public static void showSms(List<Sms> smsList) {
         for(Sms sms : smsList){
             LOGGER.log(Level.INFO,"Transaction ID: " + sms.getTransactionID());
             LOGGER.log(Level.INFO,"MSISDN:         " + sms.getMsisdn());
@@ -241,13 +227,13 @@ public class Main {
         }
     }
 
-    public void showNames(List<String> names) {
+    public static void showNames(List<String> names) {
         for (String name : names ) {
             LOGGER.log(Level.INFO,"Name: " + name);
         }
     }
 
-    public void showPromoSummary(String promoCode){
+    public static void showPromoSummary(){
 
         Report report = new Report();
         LOGGER.log(Level.INFO, "List of Failed Transactions");

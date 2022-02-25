@@ -10,7 +10,7 @@ public class SmsManagerImpl implements SmsManager {
     public void insertSms(Sms sms) {
         String query = "('" + sms.getTransactionID() + "','" + sms.getMsisdn() + "','" + sms.getRecipient() +
                 "','" + sms.getSender() + "','" + sms.getShortCode() + "','" + convertLocalDateTimeToString(sms.getTimeStamp()) +
-                "','" + sms.getStatus() + "','" + sms.getType() + "')";
+                "','" + sms.getStatus() + "','" + sms.getType() + "','" + sms.getMessage() + "')";
 
         dataAccess.insertData("SMS",query);
     }
@@ -22,7 +22,12 @@ public class SmsManagerImpl implements SmsManager {
 
     @Override
     public List<Sms> retrieveSmsByPromoCode(String promoCode) {
-        return dataAccess.getSmsByPromoCode(promoCode);
+        String shortCode = "";
+        List<Promo> promoList = dataAccess.getShortCodeByPromoCode(promoCode);
+        for ( Promo promo : promoList ){
+            shortCode = promo.getShortCode();
+        }
+        return dataAccess.getSmsByShortCode(shortCode);
     }
 
     @Override

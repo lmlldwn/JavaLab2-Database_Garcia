@@ -81,8 +81,8 @@ public class DataAccess {
         return smsList;
     }
 
-    public List<Sms> getSmsByPromoCode(String promoCode) {
-        String query = "SELECT * FROM SMS WHERE Details='" + promoCode + "'";
+    public List<Sms> getSmsByShortCode(String shortCode) {
+        String query = "SELECT * FROM SMS WHERE ShortCode='" + shortCode + "'";
         Statement statement = null;
         ResultSet resultSet = null;
         List<Sms> smsList = new ArrayList<>();
@@ -558,6 +558,11 @@ public class DataAccess {
 
     public List<Promo> getPromoByShortCode(String shortCode) {
         String find = "ShortCode='" + shortCode + "'";
+        return getPromoDataWithCondition(find);
+    }
+
+    public List<Promo> getShortCodeByPromoCode(String promoCode) {
+        String find = "PromoCode='" + promoCode + "'";
         return getPromoDataWithCondition(find);
     }
 
