@@ -9,9 +9,10 @@ public class SMS {
     private String recipient;       //company or name of store
     private String sender;          //sender's name
     private String shortCode;       //number promocode is sent to
-    private String transactionID;   //???
+    private String transactionID;   //system-generated
     private LocalDateTime timeStamp;//current date and time when sms was received
-    private String status;
+    private String status;          //Status if message is accepted or not
+    private SMSType type;
 
 
     public String getMsisdn() {
@@ -68,5 +69,13 @@ public class SMS {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public SMSType getType() {
+        return type;
+    }
+
+    public void setType(SMSType type) {
+        this.type = type;
     }
 }

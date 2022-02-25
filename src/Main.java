@@ -1,15 +1,7 @@
 import Utilities.Formatter;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.sql.Array;
-import java.sql.PreparedStatement;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
+import java.lang.reflect.Array;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -18,100 +10,125 @@ import java.util.logging.Logger;
 public class Main {
     final private static Logger logger = Logger.getLogger(Main.class.getName());
     final private static Formatter f= new Formatter();
+    final private static Scanner scan = new Scanner(System.in);
     private static DataAccess dataAccess = new DataAccess();
 
-
     public static void main(String[] args){
-        startDataBase();
-        inputData();
+
+        //inputData();
         //sampleSMS();
-        closeDataBase();
+        prepareSMS prep = new prepareSMS();
+//      sms.showSummary();
+
+        //retrieve by date
+        //String startDate = "2022-01-01 01:02:01";
+        //String endDate = "2022-03-01 01:00:00";
+        //prep.retrieveSMSByDate(startDate,endDate);
+
+//        retrieve sms by msisdn
+//        String msisdn = "09209567110";
+//        prep.retrieveSMSByMSISDN(msisdn);
+
+
+//        retrieve sms received by system
+//         prep.retrieveSMSSystemReceived();
+
+//        retrieve sms sent by system
+//        prep.retrieveSMSSystemSent();
+
+//        ArrayList<String> nums = new ArrayList<>();
+//        nums.add("09209561111");
+//        nums.add("09111111112");
+//        nums.add("09123456789");
+//        prep.retrieveSMSByMSISDN(nums);
+
+//        prep.retrieveFailedTransactions();
+//        prep.retrieveFailedTransactions(SMSType.PromoAvail.toString());
+//        prep.retrieveSuccessfulTransactions();
+//        prep.retrieveSuccessfulTransactions(SMSType.Registration.toString());
+//        prep.retrieveParticipants();
+//        prep.countSMSReceived();
+//        prep.countSMSSent();
     }
 
-//Database Tools
-    public static void startDataBase(){
-        dataAccess.setUserName(getCredentials("db.user"));
-        dataAccess.setPassword(getCredentials("db.password"));
-        dataAccess.connect();
-    }
-
-    public static void closeDataBase(){
-        dataAccess.disconnect();
-    }
-
-    public static String getCredentials(String credentials){
-        try(InputStream input
-                    = new FileInputStream("/Users/lemuelaldwin.garcia/IdeaProjects/Lab03/src/config.properties")){
-            Properties prop = new Properties();
-            prop.load(input);
-            logger.log(Level.INFO, "credentials: {0}", prop.getProperty(credentials) );
-            return prop.getProperty(credentials);
-
-        } catch (IOException ex){
-            logger.log(Level.SEVERE,"IOException : ", ex);
-        }
-        return null;
-    }
-//End of Database Tools
-
-    //write to database
-    public static void writeData(SMS sms){
-        String table = "SMS";
-        String columns = "TransactionID,MSISDN,Recipient,Sender,ShortCode,TimeStamp";
-        String values = sms.getTransactionID() + "," + sms.getMsisdn() + "," + sms.getRecipient() + "," + sms.getSender() + "," + sms.getShortCode() + "," + sms.getTimeStamp();
-        logger.log(Level.INFO, "For database: " + values);
-        //dataAccess.insertData(table, values);
-    }
-
-    //data from user
+    //Enter Data from USER // MESSAGE received from user
     public static void inputData(){
+        String msisdn = "";
+        String sender = "";
+        String message = "";
+        String shortCode = "";
+        String recipient = "System";
+        String status = "Failed";
+        SMSType type= SMSType.SystemGenerated;
 
-        Scanner scan = new Scanner(System.in);
+            //prompt message
+            //if register -> register -> write register to db -> prompt promo for same user -> check message
+            // if not register -> validate promo
+
         logger.log(Level.INFO, "Enter Mobile Number: ");
-        String msisdn = scan.next();
+        msisdn = scan.nextLine();
 
         logger.log(Level.INFO, "Enter Message: ");
-        String message = scan.next();
+        message = scan.nextLine();
 
         logger.log(Level.INFO, "Enter Short Code: ");
-        String shortCode = scan.next();
-
-//        String mobileNumber = "09209567110";
-//        String message = "PISO PIZZA";
-//        String shortCode = "1234";
+        shortCode = scan.nextLine();
 
 
+        if ( message.equals("REGISTER") ){
+            sender = registerName();
+            status = "Success";
+            type = SMSType.Registration;
 
-        HashMap<String, String> data = new HashMap<>();
-        data.put("MSISDN",msisdn);
-        data.put("Message",message);
-        data.put("Short Code", shortCode);
-        //String name = "Lemuel";
-        //data.put("Name", name);
+            logger.log(Level.INFO, "Enter Mobile Number: ");
+            msisdn = scan.nextLine();
 
-        smsChecker(data);
-        //logger.log(Level.INFO, "Username is " + input);
+            logger.log(Level.INFO, "Enter Message: ");
+            message = scan.nextLine();
 
+            logger.log(Level.INFO, "Enter Short Code: ");
+            shortCode = scan.nextLine();
+        }else {
+            HashMap<String, String> data = new HashMap<>();
+            data.put("MSISDN", msisdn);
+            data.put("Message", message);
+            data.put("Short Code", shortCode);
+            status = smsChecker(data);                   //from sms checker function
+            type = SMSType.PromoAvail;
+        }
+        //else is needed to write registration sms to db if not present, it will not write registration messages to db
+        //try to add new table for registration of number to users to fix this situation
 
-        String sender = "Lemuel Garcia"; // needs to be user input
-        String recipient = "LOLPH";                         //System or UserName depending on whom the sender is.
         String transactionID= UUID.randomUUID().toString(); //computer generated
         LocalDateTime timeStamp = LocalDateTime.now();      //computer generated
-        String status = smsChecker(data);                          //from sms checker function
 
-        String query = "('" + transactionID + "','" + msisdn + "','" + recipient + "','" + sender + "','" + shortCode + "','" + f.convertLocalDateTimeToString(timeStamp) + "','" + status + "')";
-        //INSERT INTO `SMS`.`SMS` (`TransactionID`, `MSISDN`, `Recipient`, `Sender`, `ShortCode`, `TimeStamp`, `Status`) VALUES ('123ASDF', '09209567110', 'MIMZ', 'Lemuel Aldwin', '1234', '2022-02-23 23:28:45');
-        //System.out.println(query);
-        logger.info(query);
-        //dataAccess.insertData("SMS",query);
+        if ( sender.equals("")){
+            status = "Failed";
+        }
+
+        SMS sms = new SMS();
+        sms.setShortCode(shortCode);
+        sms.setMsisdn(msisdn);
+        sms.setSender(sender);
+        sms.setRecipient(recipient);
+        sms.setStatus(status);
+        sms.setTimeStamp(timeStamp);
+        sms.setTransactionID(transactionID);
+        sms.setType(type);
+
+        prepareSMS prep = new prepareSMS();
+        prep.insertSMS(sms);
     }
-    public static void showPromoList(ArrayList<Promo> promos) {
 
-//        private String promoCode;
-//        private String details;
-//        private String shortCode;
-//        private Date startDate;
-//        private Date endDate;
+    public static String registerName (){
+        String sender = "";
+        logger.log(Level.INFO, "To complete the promo registration, please send 'Lastname, Firstname' to 1234555");
+        sender = scan.nextLine();
+//        senderLastName = scan.nextLine();
+//        senderFirstName = scan.nextLine();
+//        sender = senderFirstName + " " + senderLastName.replace(",","");
+//        check sender name entered (remove comma)
+        return sender;
     }
     public static String smsChecker(HashMap<String,String> values){
 
@@ -161,7 +178,7 @@ public class Main {
             proceed = false;
         }
 
-        //check the contents in the hashmap
+        //check if promo code is available
         if(proceed){
             logger.info("Short Code: " + values.get("Short Code"));
             logger.info("Message/PromoCode sent: " + values.get("Message"));
@@ -211,9 +228,8 @@ public class Main {
         }
         //return false;
     }
-    //getList of ALL Promos
+    //Display of ALL Promos
     public static void displayPromos(ArrayList<Promo> promos){
-
         for(Promo promo : promos){
             System.out.println("Promo: " + promo);
             System.out.println(promo.getPromoCode());
@@ -224,36 +240,14 @@ public class Main {
         }
     }
 
-    public static void sampleSMS(){
-//        private String msisdn;
-//        private String recipient;
-//        private String sender;
-//        private String shortCode;
-//        private int transactionID;
-//        private LocalDateTime timeStamp;
-//        private String status;
-
-        String msisdn = "09209567110";                      //user input
-        String sender = "Lemuel Garcia";                    //Sender of message  system or person - user input if from person
-        String shortCode = "1234";                          //series of numbers - user input
-        String message = "PISO PIZZA";                      //user input
-
-        String recipient = "LOLPH";                         //System or UserName depending on whom the sender is.
-        String transactionID= UUID.randomUUID().toString(); //computer generated
-        LocalDateTime timeStamp = LocalDateTime.now();      //computer generated
-        String status = "Success";                          //from sms checker function
-
-        String query = "('" + transactionID + "','" + msisdn + "','" + recipient + "','" + sender + "','" + shortCode + "','" + f.convertLocalDateTimeToString(timeStamp) + "','" + status + "')";
-        //INSERT INTO `SMS`.`SMS` (`TransactionID`, `MSISDN`, `Recipient`, `Sender`, `ShortCode`, `TimeStamp`, `Status`) VALUES ('123ASDF', '09209567110', 'MIMZ', 'Lemuel Aldwin', '1234', '2022-02-23 23:28:45');
-        //System.out.println(query);
-        logger.info(query);
-        //dataAccess.insertData("SMS",query);
+    public static void menu(){
+        StringBuffer stringBuffer = new StringBuffer();
+        stringBuffer
+                .append("(1) Send SMS ")
+                .append("(2) View SMS by Date ")
+                .append("(3) View SMS by ???");
+        logger.log(Level.INFO,stringBuffer.toString());
     }
-
-
-
-
-
 
 
 }
