@@ -1,45 +1,578 @@
-import Utilities.Formatter;
-
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static util.DateFormatterUtils.convertStringToLocalDateTime;
 
-
-
-//Data Access Layer
-//Perform connections to the database
 public class DataAccess {
-
-    final private static Logger logger = Logger.getLogger(DataAccess.class.getName());
-    final private Formatter f = new Formatter();
-    private static Connection connection = null;
-
-    private String userName;
-    private String password;
 
     DataAccess (){
         setCredentials();
     }
 
-    DataAccess(String userName, String password){
-        this.userName = userName;
-        this.password = password;
+    private static final Logger LOGGER = Logger.getLogger(DataAccess.class.getName());
+    private Connection connection = null;
+    private String userName;
+    private String password;
+    private String dbUrl;
+
+    public void insertData(String table, String data) {
+        String insertQuery = "INSERT INTO " + table + " VALUES " + data ;
+        Statement statement = null;
+
+        connect();
+        try {
+            statement = connection.createStatement();
+            int result = statement.executeUpdate(insertQuery);
+        } catch(SQLException e) {
+            LOGGER.log(Level.SEVERE, "SQL Exception: ", e);
+        } finally {
+            try {
+                if (statement != null) {
+                    statement.close();
+                }
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, "ERROR IN CLOSING", e);
+            }
+        }
+        LOGGER.log(Level.INFO, "Inserted Data: " + data);
+        disconnect();
     }
 
-    public String getUserName() {
-        return userName;
+    //SMS Functionalities
+
+    public List<Sms> getSmsByDate(String startDate, String endDate) {
+        String query = "SELECT * FROM SMS WHERE TimeStamp BETWEEN " + startDate + " and " + endDate;
+
+        connect();
+
+        Statement statement = null;
+        ResultSet resultSet = null;
+        List<Sms> smsList = new ArrayList<>();
+
+
+        try {
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(query);
+
+            while (resultSet.next()) {
+                smsList.add(mapResultSetToSms(resultSet));
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "SQLException", e);
+        } finally {
+            try {
+                if (statement != null) {
+                    statement.close();
+                }
+                if (resultSet != null) {
+                    resultSet.close();
+                }
+            } catch(Exception e) {
+                LOGGER.log(Level.SEVERE, "ERROR IN CLOSING", e);
+            }
+        }
+        disconnect();
+        return smsList;
     }
-    public void setUserName(String userName) {
-        this.userName = userName;
+
+    public List<Sms> getSmsByPromoCode(String promoCode) {
+        String query = "SELECT * FROM SMS WHERE Details='" + promoCode + "'";
+        Statement statement = null;
+        ResultSet resultSet = null;
+        List<Sms> smsList = new ArrayList<>();
+
+        connect();
+
+        try {
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(query);
+
+            while (resultSet.next()) {
+                smsList.add(mapResultSetToSms(resultSet));
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "SQLException", e);
+        } finally {
+            try {
+                if (statement != null) {
+                    statement.close();
+                }
+                if (resultSet != null) {
+                    resultSet.close();
+                }
+            } catch(Exception e) {
+                LOGGER.log(Level.SEVERE, "ERROR IN CLOSING", e);
+            }
+        }
+        disconnect();
+        return smsList;
     }
-    public void setPassword(String password) {
-        this.password = password;
+
+    public List<Sms> getSmsByMsisdn(String msisdn) {
+        String query = "SELECT * FROM SMS WHERE MSISDN='" + msisdn + "'";
+        Statement statement = null;
+        ResultSet resultSet = null;
+        List<Sms> smsList = new ArrayList<>();
+
+        connect();
+
+        try {
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(query);
+
+            while (resultSet.next()) {
+                smsList.add(mapResultSetToSms(resultSet));
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "SQLException", e);
+        } finally {
+            try {
+                if (statement != null) {
+                    statement.close();
+                }
+                if (resultSet != null) {
+                    resultSet.close();
+                }
+            } catch(Exception e) {
+                LOGGER.log(Level.SEVERE, "ERROR IN CLOSING", e);
+            }
+        }
+        disconnect();
+        return smsList;
     }
+
+    public List<Sms> getSmsSentBySystem() {
+        String query = "SELECT * FROM SMS WHERE Sender='SYSTEM'";
+        Statement statement = null;
+        ResultSet resultSet = null;
+        List<Sms> smsList = new ArrayList<>();
+
+        connect();
+
+        try {
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(query);
+
+            while (resultSet.next()) {
+                smsList.add(mapResultSetToSms(resultSet));
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "SQLException", e);
+        } finally {
+            try {
+                if (statement != null) {
+                    statement.close();
+                }
+                if (resultSet != null) {
+                    resultSet.close();
+                }
+            } catch(Exception e) {
+                LOGGER.log(Level.SEVERE, "ERROR IN CLOSING", e);
+            }
+        }
+        disconnect();
+
+        return smsList;
+    }
+
+    public List<Sms> getSmsReceivedBySystem() {
+        String query = "SELECT * FROM SMS WHERE Recipient='SYSTEM'";
+        Statement statement = null;
+        ResultSet resultSet = null;
+        List<Sms> smsList = new ArrayList<>();
+
+        connect();
+
+        try {
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(query);
+
+            while (resultSet.next()) {
+                smsList.add(mapResultSetToSms(resultSet));
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "SQLException", e);
+        } finally {
+            try {
+                if (statement != null) {
+                    statement.close();
+                }
+                if (resultSet != null) {
+                    resultSet.close();
+                }
+            } catch(Exception e) {
+                LOGGER.log(Level.SEVERE, "ERROR IN CLOSING", e);
+            }
+        }
+        disconnect();
+
+        return smsList;
+    }
+
+    public List<Sms> getFailedTransaction(String shortCode) {
+        String query = "SELECT * FROM SMS WHERE Status='Failed' AND ShortCode='" + shortCode + "'";
+        Statement statement = null;
+        ResultSet resultSet = null;
+        List<Sms> smsList = new ArrayList<>();
+
+        connect();
+
+        try {
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(query);
+
+            while (resultSet.next()) {
+                smsList.add(mapResultSetToSms(resultSet));
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "SQLException", e);
+        } finally {
+            try {
+                if (statement != null) {
+                    statement.close();
+                }
+                if (resultSet != null) {
+                    resultSet.close();
+                }
+            } catch(Exception e) {
+                LOGGER.log(Level.SEVERE, "ERROR IN CLOSING", e);
+            }
+        }
+        disconnect();
+        return smsList;
+    }
+
+    public List<Sms> getFailedTransactionBySmsType(String shortCode, String type) {
+        String query = "SELECT * FROM SMS WHERE Status='Failed' AND Type='" + type + "' AND ShortCode='" + shortCode + "'";
+        Statement statement = null;
+        ResultSet resultSet = null;
+        List<Sms> smsList = new ArrayList<>();
+
+        connect();
+
+        try {
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(query);
+
+            while (resultSet.next()) {
+                smsList.add(mapResultSetToSms(resultSet));
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "SQLException", e);
+        } finally {
+            try {
+                if (statement != null) {
+                    statement.close();
+                }
+                if (resultSet != null) {
+                    resultSet.close();
+                }
+            } catch(Exception e) {
+                LOGGER.log(Level.SEVERE, "ERROR IN CLOSING", e);
+            }
+        }
+        disconnect();
+        return smsList;
+    }
+
+    public List<Sms> getSuccessfulTransaction(String shortCode) {
+        String query = "SELECT * FROM SMS WHERE Status='Success' AND ShortCode='" + shortCode + "'";
+        Statement statement = null;
+        ResultSet resultSet = null;
+        List<Sms> smsList = new ArrayList<>();
+
+        connect();
+
+        try {
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(query);
+
+            while (resultSet.next()) {
+                smsList.add(mapResultSetToSms(resultSet));
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "SQLException", e);
+        } finally {
+            try {
+                if (statement != null) {
+                    statement.close();
+                }
+                if (resultSet != null) {
+                    resultSet.close();
+                }
+            } catch(Exception e) {
+                LOGGER.log(Level.SEVERE, "ERROR IN CLOSING", e);
+            }
+        }
+        disconnect();
+        return smsList;
+    }
+
+    public List<Sms> getSuccessfulTransactionBySmsType(String shortCode, String type) {
+        String query = "SELECT * FROM SMS WHERE Status='Success' AND Type='" + type + "' AND ShortCode='" + shortCode + "'";
+        Statement statement = null;
+        ResultSet resultSet = null;
+        List<Sms> smsList = new ArrayList<>();
+
+        connect();
+
+        try {
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(query);
+
+            while (resultSet.next()) {
+                smsList.add(mapResultSetToSms(resultSet));
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "SQLException", e);
+        } finally {
+            try {
+                if (statement != null) {
+                    statement.close();
+                }
+                if (resultSet != null) {
+                    resultSet.close();
+                }
+            } catch(Exception e) {
+                LOGGER.log(Level.SEVERE, "ERROR IN CLOSING", e);
+            }
+        }
+        disconnect();
+        return smsList;
+    }
+
+    public List<String> getPeoplePerPromo(String shortCode) {
+        String query = "SELECT Sender FROM SMS WHERE Sender != 'SYSTEM' AND SENDER != '' AND ShortCode='" + shortCode + "'";
+        Statement statement = null;
+        ResultSet resultSet = null;
+        List<String> stringList = new ArrayList<>();
+
+        connect();
+
+        try{
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(query);
+
+            while(resultSet.next()){
+                stringList.add(resultSet.getString(1));
+            }
+
+        }catch(SQLException e){
+            LOGGER.log(Level.SEVERE,"SQLException",e);
+        }finally {
+            try{
+                if (statement != null){
+                    statement.close();
+                }
+                if (resultSet != null){
+                    resultSet.close();
+                }
+            }catch(Exception e) {
+                LOGGER.log(Level.SEVERE, "ERROR IN CLOSING", e);
+            }
+        }
+        disconnect();
+        return stringList;
+    }
+
+    public String checkRegistration(String msisdn, String shortCode) {
+        String query = "SELECT Sender FROM SMS WHERE MSISDN='" + msisdn + "' AND ShortCode='" + shortCode + "' AND Type='REGISTRATION' AND Status='Success'";
+        Statement statement = null;
+        ResultSet resultSet = null;
+        String string = "";
+
+        connect();
+
+        try{
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(query);
+
+            while(resultSet.next()){
+                string = resultSet.getString(1);
+            }
+
+        }catch(SQLException e){
+            LOGGER.log(Level.SEVERE,"SQLException",e);
+        }finally {
+            try{
+                if (statement != null){
+                    statement.close();
+                }
+                if (resultSet != null){
+                    resultSet.close();
+                }
+            }catch(Exception e) {
+                LOGGER.log(Level.SEVERE, "ERROR IN CLOSING", e);
+            }
+        }
+        disconnect();
+        return string;
+    }
+
+    public int countSMSReceivedBySystem(String shortCode) {
+        String query = "SELECT COUNT(Recipient) FROM SMS WHERE Recipient='SYSTEM' AND ShortCode='" + shortCode + "'";
+        Statement statement = null;
+        ResultSet resultSet = null;
+        int count = 0;
+
+        connect();
+
+        try{
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(query);
+
+            while(resultSet.next()){
+                count = resultSet.getInt(1);
+            }
+
+        }catch(SQLException e){
+            LOGGER.log(Level.SEVERE,"SQLException",e);
+        }finally {
+            try{
+                if (statement != null){
+                    statement.close();
+                }
+                if (resultSet != null){
+                    resultSet.close();
+                }
+            }catch(Exception e) {
+                LOGGER.log(Level.SEVERE, "ERROR IN CLOSING", e);
+            }
+        }
+        disconnect();
+        return count;
+    }
+
+    public int countSMSSentBySystem(String shortCode) {
+        String query = "SELECT COUNT(Sender) FROM SMS WHERE Sender='SYSTEM' AND ShortCode='" + shortCode + "'";
+        Statement statement = null;
+        ResultSet resultSet = null;
+        int count = 0;
+
+        connect();
+
+        try{
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(query);
+
+            while(resultSet.next()){
+                count = resultSet.getInt(1);
+            }
+
+        }catch(SQLException e){
+            LOGGER.log(Level.SEVERE,"SQLException",e);
+        }finally {
+            try{
+                if (statement != null){
+                    statement.close();
+                }
+                if (resultSet != null){
+                    resultSet.close();
+                }
+            }catch(Exception e) {
+                LOGGER.log(Level.SEVERE, "ERROR IN CLOSING", e);
+            }
+        }
+        disconnect();
+        return count;
+    }
+
+
+    //Promo Functionalities
+
+    public void insertPromo(Promo promo) {
+        String query = "('" + promo.getPromoCode() + "','" + promo.getDetails() + "','" + promo.getShortCode() +
+                "','" + promo.getStartDate() + "','" + promo.getEndDate() + "')";
+        insertData("Promos",query);
+    }
+
+    public List<Promo> getPromoData() {
+        String query = "SELECT * FROM Promos";
+
+        Statement statement = null;
+        ResultSet resultSet = null;
+        List<Promo> promoList = new ArrayList<>();
+        connect();
+        try{
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(query);
+
+            while(resultSet.next()){
+                promoList.add(mapResultSetToPromo(resultSet));
+            }
+        }catch(SQLException e){
+            LOGGER.log(Level.SEVERE,"SQLException",e);
+        }finally {
+            try{
+                if (statement != null){
+                    statement.close();
+                }
+                if (resultSet != null){
+                    resultSet.close();
+                }
+            }catch(Exception e) {
+                LOGGER.log(Level.SEVERE, "ERROR IN CLOSING", e);
+            }
+        }
+        disconnect();
+        return promoList;
+    }
+
+    public List<Promo> getPromoDataWithCondition(String find) {
+        String query = "SELECT * FROM Promos WHERE " + find;
+        Statement statement = null;
+        ResultSet resultSet = null;
+        List<Promo> promoList = new ArrayList<>();
+
+        connect();
+        try{
+            statement = connection.createStatement();
+            resultSet = statement.executeQuery(query);
+            while(resultSet.next()){
+                promoList.add(mapResultSetToPromo(resultSet));
+            }
+
+        }catch(SQLException e){
+            LOGGER.log(Level.SEVERE,"SQLException",e);
+        }finally {
+            try{
+                if (statement != null){
+                    statement.close();
+                }
+                if (resultSet != null){
+                    resultSet.close();
+                }
+            }catch(Exception e) {
+                LOGGER.log(Level.SEVERE, "ERROR IN CLOSING", e);
+            }
+        }
+        disconnect();
+        return promoList;
+    }
+
+    public List<Promo> getPromoByShortCode(String shortCode) {
+        String find = "ShortCode='" + shortCode + "'";
+        return getPromoDataWithCondition(find);
+    }
+
+    public List<Promo> getValidPromoByTimeStamp(String timeStamp ) {
+        String find = timeStamp + "' BETWEEN StartDate AND EndDate";
+        return getPromoDataWithCondition(find);
+    }
+
+    public List<Promo> getValidPromoByPromoCodeAndTimeStamp(String promoCode, String timeStamp ) {
+        String find = "PromoCode='" + promoCode + "' AND '" + timeStamp + "' BETWEEN StartDate AND EndDate";
+        return getPromoDataWithCondition(find);
+    }
+
+
+    //private functions
 
     private void setCredentials(){
         try(InputStream input
@@ -48,301 +581,60 @@ public class DataAccess {
             prop.load(input);
             this.userName = prop.getProperty("db.user");
             this.password = prop.getProperty("db.password");
+            this.dbUrl = prop.getProperty("db.url");
         } catch (IOException ex){
-            logger.log(Level.SEVERE,"IOException : ", ex);
+            LOGGER.log(Level.SEVERE,"IOException : ", ex);
         }
     }
 
-    public void connect(){
+    private void connect() {
         try{
             Class.forName("com.mysql.cj.jdbc.Driver");
             connection = DriverManager.getConnection(
-                    "jdbc:mysql://localhost:3306/SMS?useTimezone-true&serverTimezone=UTC",userName,password);
-            logger.info("Connected");
+                    dbUrl,userName,password);
+            LOGGER.info("Connected");
         }catch (Exception e){
-            logger.log(Level.SEVERE, "Not Connected", e);
+            LOGGER.log(Level.SEVERE, "Not Connected", e);
         }
     }
 
-    public void disconnect(){
+    private void disconnect() {
         try{
-            if (connection != null){
+            if (connection != null) {
                 connection.close();
-                logger.info("Connection closed.");
+                LOGGER.info("Connection closed.");
             }
-        }catch (Exception e){
-            logger.log(Level.SEVERE,"Not Connected", e);
+        }catch (Exception e) {
+            LOGGER.log(Level.SEVERE,"Not Connected", e);
         }
     }
 
-    public void insertData(String table, String columns, String data){
-        String insertQuery = "INSERT INTO " + table + " (" + columns + ") " + " VALUES ('" + data + "')";
-        Statement statement = null;
-        int result = 0;
+    private Sms mapResultSetToSms(ResultSet resultSet) throws SQLException {
+        Sms sms = new Sms();
+        sms.setTransactionID(resultSet.getString(1));
+        sms.setMsisdn(resultSet.getString(2));
+        sms.setRecipient(resultSet.getString(3));
+        sms.setSender(resultSet.getString(4));
+        sms.setShortCode(resultSet.getString(5));
+        sms.setTimeStamp(convertStringToLocalDateTime(resultSet.getString(6)));
+        sms.setStatus(resultSet.getString(7));
+        sms.setType(SmsTypeEnum.toEnum(resultSet.getString(8)));
 
-        try{
-            statement = connection.createStatement();
-            result = statement.executeUpdate(insertQuery);
-        } catch(SQLException e){
-            logger.log(Level.SEVERE, "SQL Exception: ", e);
-        } finally {
-            try{
-                if (statement != null){
-                    statement.close();
-                }
-            } catch (Exception e){
-                logger.log(Level.SEVERE, "ERROR IN CLOSING", e);
-            }
-        }
-        logger.log(Level.INFO, "Inserted Data: " + data);
+        return sms;
     }
 
-    public void insertData(String table, String data){
-        String insertQuery = "INSERT INTO " + table + " VALUES " + data ;
-        Statement statement = null;
-        int result = 0;
+    private Promo mapResultSetToPromo(ResultSet resultSet) throws SQLException {
+        Promo promo = new Promo();
+        promo.setPromoCode(resultSet.getString(1));
+        promo.setDetails(resultSet.getString(2));
+        promo.setShortCode(resultSet.getString(3));
+        String startDate = resultSet.getString(4);
+        String endDate = resultSet.getString(5);
 
-        try{
-            statement = connection.createStatement();
-            result = statement.executeUpdate(insertQuery);
-        } catch(SQLException e){
-            logger.log(Level.SEVERE, "SQL Exception: ", e);
-        } finally {
-            try{
-                if (statement != null){
-                    statement.close();
-                }
-            } catch (Exception e){
-                logger.log(Level.SEVERE, "ERROR IN CLOSING", e);
-            }
-        }
-        logger.log(Level.INFO, "Inserted Data: " + data);
+        promo.setStartDate(convertStringToLocalDateTime(startDate));
+        promo.setEndDate(convertStringToLocalDateTime(endDate));
+
+        return promo;
     }
-
-    public ArrayList<Promo> retrievePromoData(String table){
-        //fix query for lab 3.1.2
-        String selectQuery = "SELECT * FROM " + table;
-
-        Statement statement = null;
-        ResultSet resultSet = null;
-        ArrayList<String> result = new ArrayList<>();
-
-        ArrayList<Promo> promos = new ArrayList<>();
-
-        try{
-            statement = connection.createStatement();
-            resultSet = statement.executeQuery(selectQuery);
-
-
-            while(resultSet.next()){
-                Promo promo = new Promo();
-                promo.setPromoCode(resultSet.getString(1));
-                promo.setDetails(resultSet.getString(2));
-                promo.setShortCode(resultSet.getString(3));
-                String startDate = resultSet.getString(4);
-                String endDate = resultSet.getString(5);
-
-                promo.setStartDate(f.convertStringToLocalDateTime(startDate));
-                promo.setEndDate(f.convertStringToLocalDateTime(endDate));
-
-                promos.add(promo);
-            }
-        }catch(SQLException e){
-            logger.log(Level.SEVERE,"SQLException",e);
-        }finally {
-            try{
-                if (statement != null){
-                    statement.close();
-                }
-                if (resultSet != null){
-                    resultSet.close();
-                }
-            }catch(Exception e) {
-                logger.log(Level.SEVERE, "ERROR IN CLOSING", e);
-            }
-        }
-        //logger.log(Level.INFO,"Retrieved : {0} ", result);
-        return promos;
-    }
-
-    public ArrayList<Promo> retrievePromoData(String table, String find){
-        //fix query for lab 3.1.2
-        String selectQuery = "SELECT * FROM " + table + " WHERE " + find;
-        Statement statement = null;
-        ResultSet resultSet = null;
-        ArrayList<Promo> promos = new ArrayList<>();
-
-        try{
-            statement = connection.createStatement();
-            resultSet = statement.executeQuery(selectQuery);
-
-
-            while(resultSet.next()){
-                Promo promo = new Promo();
-                promo.setPromoCode(resultSet.getString(1));
-                promo.setDetails(resultSet.getString(2));
-                promo.setShortCode(resultSet.getString(3));
-                String startDate = resultSet.getString(4);
-                String endDate = resultSet.getString(5);
-
-                promo.setStartDate(f.convertStringToLocalDateTime(startDate));
-                promo.setEndDate(f.convertStringToLocalDateTime(endDate));
-                promos.add(promo);
-            }
-
-        }catch(SQLException e){
-            logger.log(Level.SEVERE,"SQLException",e);
-        }finally {
-            try{
-                if (statement != null){
-                    statement.close();
-                }
-                if (resultSet != null){
-                    resultSet.close();
-                }
-            }catch(Exception e) {
-                logger.log(Level.SEVERE, "ERROR IN CLOSING", e);
-            }
-        }
-        //logger.log(Level.INFO,"Retrieved : {0} ", result);
-        return promos;
-    }
-
-    public ArrayList<SMS> retrieveSMSData(String table){
-        //fix query for lab 3.1.2
-        String selectQuery = "SELECT * FROM " + table ;
-
-        Statement statement = null;
-        ResultSet resultSet = null;
-        ArrayList<SMS> smsArrayList = new ArrayList<>();
-
-        try{
-            statement = connection.createStatement();
-            resultSet = statement.executeQuery(selectQuery);
-
-
-            while(resultSet.next()){
-                SMS sms = new SMS();
-                sms.setTransactionID(resultSet.getString(1));
-                sms.setMsisdn(resultSet.getString(2));
-                sms.setRecipient(resultSet.getString(3));
-                sms.setSender(resultSet.getString(4));
-                sms.setShortCode(resultSet.getString(5));
-                sms.setStatus(resultSet.getString(7));
-
-                String timeStamp = resultSet.getString(6);
-                sms.setTimeStamp(f.convertStringToLocalDateTime(timeStamp));
-
-                String type = resultSet.getString(8);
-                if (type.equals(SMSType.PromoAvail)){
-                    sms.setType(SMSType.PromoAvail);
-                }else if (type.equals(SMSType.Registration)){
-                    sms.setType(SMSType.Registration);
-                }else if (type.equals(SMSType.SystemGenerated)){
-                    sms.setType(SMSType.SystemGenerated);
-                }
-                smsArrayList.add(sms);
-            }
-
-        }catch(SQLException e){
-            logger.log(Level.SEVERE,"SQLException",e);
-        }finally {
-            try{
-                if (statement != null){
-                    statement.close();
-                }
-                if (resultSet != null){
-                    resultSet.close();
-                }
-            }catch(Exception e) {
-                logger.log(Level.SEVERE, "ERROR IN CLOSING", e);
-            }
-        }
-        return smsArrayList;
-    }
-
-    public ArrayList<SMS> retrieveSMSData(String table, String find){
-        //fix query for lab 3.1.2
-        String selectQuery = "SELECT * FROM " + table + " WHERE " + find;
-
-        Statement statement = null;
-        ResultSet resultSet = null;
-        ArrayList<SMS> smsArrayList = new ArrayList<>();
-
-        try{
-            statement = connection.createStatement();
-            resultSet = statement.executeQuery(selectQuery);
-
-            while(resultSet.next()){
-                SMS sms = new SMS();
-                sms.setTransactionID(resultSet.getString(1));
-                sms.setMsisdn(resultSet.getString(2));
-                sms.setRecipient(resultSet.getString(3));
-                sms.setSender(resultSet.getString(4));
-                sms.setShortCode(resultSet.getString(5));
-                sms.setStatus(resultSet.getString(7));
-
-                String timeStamp = resultSet.getString(6);
-                sms.setTimeStamp(f.convertStringToLocalDateTime(timeStamp));
-
-                String type = resultSet.getString(8);
-                if (type.equals(SMSType.PromoAvail.toString())){
-                    sms.setType(SMSType.PromoAvail);
-                }else if (type.equals(SMSType.Registration.toString())){
-                    sms.setType(SMSType.Registration);
-                }else if (type.equals(SMSType.SystemGenerated.toString())){
-                    sms.setType(SMSType.SystemGenerated);
-                }
-                smsArrayList.add(sms);
-            }
-
-        }catch(SQLException e){
-            logger.log(Level.SEVERE,"SQLException",e);
-        }finally {
-            try{
-                if (statement != null){
-                    statement.close();
-                }
-                if (resultSet != null){
-                    resultSet.close();
-                }
-            }catch(Exception e) {
-                logger.log(Level.SEVERE, "ERROR IN CLOSING", e);
-            }
-        }
-        return smsArrayList;
-    }
-
-    public ArrayList<String> retrieveSingleColumn(String selectQuery){
-        Statement statement = null;
-        ResultSet resultSet = null;
-        ArrayList<String> stringArrayList = new ArrayList<>();
-
-        try{
-            statement = connection.createStatement();
-            resultSet = statement.executeQuery(selectQuery);
-
-            while(resultSet.next()){
-                stringArrayList.add(resultSet.getString(1));
-            }
-
-        }catch(SQLException e){
-            logger.log(Level.SEVERE,"SQLException",e);
-        }finally {
-            try{
-                if (statement != null){
-                    statement.close();
-                }
-                if (resultSet != null){
-                    resultSet.close();
-                }
-            }catch(Exception e) {
-                logger.log(Level.SEVERE, "ERROR IN CLOSING", e);
-            }
-        }
-        return stringArrayList;
-    }
-
-
 
 }

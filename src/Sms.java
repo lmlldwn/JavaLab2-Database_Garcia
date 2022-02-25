@@ -1,10 +1,6 @@
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-public class SMS {
+public class Sms {
     private String msisdn;          //mobile number of sender
     private String recipient;       //company or name of store
     private String sender;          //sender's name
@@ -12,8 +8,20 @@ public class SMS {
     private String transactionID;   //system-generated
     private LocalDateTime timeStamp;//current date and time when sms was received
     private String status;          //Status if message is accepted or not
-    private SMSType type;
+    private SmsTypeEnum type;
 
+    Sms(){}
+
+    Sms(String msisdn, String recipient, String sender, String shortCode, String transactionID, LocalDateTime timeStamp, String status, SmsTypeEnum type){
+        this.msisdn = msisdn;
+        this.recipient = recipient;
+        this.sender = sender;
+        this.shortCode = shortCode;
+        this.transactionID = transactionID;
+        this.timeStamp = timeStamp;
+        this.status = status;
+        this.type = type;
+    }
 
     public String getMsisdn() {
         return msisdn;
@@ -71,11 +79,11 @@ public class SMS {
         this.status = status;
     }
 
-    public SMSType getType() {
+    public SmsTypeEnum getType() {
         return type;
     }
 
-    public void setType(SMSType type) {
+    public void setType(SmsTypeEnum type) {
         this.type = type;
     }
 }

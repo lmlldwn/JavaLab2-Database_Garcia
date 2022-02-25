@@ -1,5 +1,4 @@
 import java.time.LocalDateTime;
-import java.util.Date;
 
 public class Promo {
     private String promoCode;
@@ -31,7 +30,6 @@ public class Promo {
     public void setShortCode(String shortCode) {
         this.shortCode = shortCode;
     }
-
 
     public LocalDateTime getStartDate() {
         return startDate;
