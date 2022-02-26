@@ -46,11 +46,11 @@ public class Main {
 ////        retrieve sms sent by system
 //        smsManager.retrieveSmsSentBySystem();
 //
-//        ArrayList<String> nums = new ArrayList<>();
-//        nums.add("09209561111");
-//        nums.add("09111111112");
-//        nums.add("09123456789");
-//        smsManager.retrieveSmsByMsisdn(nums);
+//        ArrayList<String> numbers = new ArrayList<>();
+//        numbers.add("09209561111");
+//        numbers.add("09111111112");
+//        numbers.add("09123456789");
+//        smsManager.retrieveSmsByMsisdn(numbers);
 
     }
 
@@ -201,7 +201,6 @@ public class Main {
         return new Sms(msisdn,recipient,sender,shortCode,transactionID,timeStamp,status,type, message);
     }
 
-    //Display of ALL Promos
     public static void displayPromos() {
         List<Promo> promos = promoManager.retrieveAllPromo();
         for(Promo promo : promos){
